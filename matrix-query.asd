@@ -6,5 +6,11 @@
   :license  "Specify license here"
   :version "0.0.1"
   :serial t
+  :depends-on (#:drakma
+	       #:flexi-streams
+	       #:yason)
   :components ((:file "package")
-               (:file "matrix-query")))
+               (:file "matrix-query")
+	       (:file "session")
+	       (:file "communicate")
+	       ))
