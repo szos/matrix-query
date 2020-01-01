@@ -28,6 +28,9 @@ for example: @bob:matrix.org")
 
 
 (defun login ()
+  "logs in a user and stores relevant data such as access token. handles reading username
+and password. If an invalid password error is returned from the server, signals the 
+invalid-login-error and reruns. "
   (flet ((send-recv-login-data (un pw)
 	   (let ((stream
 		  (drakma:http-request "https://matrix.org/_matrix/client/r0/login"
@@ -63,6 +66,7 @@ for example: @bob:matrix.org")
 	(format nil "User ~a is already logged in" *user-address*))))
 
 (defun logout ()
+  "logs out currently logged in user. TODO: check if this actually logs out user. "
   (recieve-json (concatenate 'string "https://matrix.org/" "_matrix/client/r0/logout"))
   (setf *session-user-auth* nil)
   (setf *device-id* nil)

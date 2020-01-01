@@ -3,6 +3,8 @@
 (in-package :matrix-query)
 
 (defun send-json (url content &rest key-plist)
+  "sends a «post» to the specified url, with the users auth token included. parses results as 
+an alist"
   (if key-plist
       (let ((stream (drakma:http-request url
 					 :want-stream t
