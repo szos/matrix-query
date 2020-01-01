@@ -2,6 +2,12 @@
 
 (in-package :matrix-query)
 
+(defparameter *homeserver* "https://matrix.org/"
+  "this is the users homeserver, where their user resides.")
+
+(defun set-homeserver (homeserver)
+  (setf *homeserver* homeserver))
+
 (defun send-json (url content &rest key-plist)
   "sends a «post» to the specified url, with the users auth token included. parses results as 
 an alist"
@@ -39,3 +45,7 @@ results as an alist."
 				     `(("Authorization" . ,(concatenate 'string "Bearer "
 									*session-user-auth*))))))
     (yason:parse stream :object-as :alist)))
+
+
+
+
