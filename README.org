@@ -1,0 +1,4 @@
+#+title: matrix-query readme
+#+author: szos
+
+This is a package to query a matrix homeserver, to get messages and send messages, etc
