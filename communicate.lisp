@@ -46,6 +46,16 @@ results as an alist."
 									*session-user-auth*))))))
     (yason:parse stream :object-as :alist)))
 
+(defun recv-json (url)
+  (multiple-value-bind (response status-code)
+      (drakma:http-request url
+			   :want-stream t
+			   :method :get
+			   :additional-headers
+			   `(("Authorization" . ,(concatenate 'string "Bearer "
+			   				      *session-user-auth*))))
+    (values response status-code)))
+
 
 
 

@@ -70,6 +70,32 @@ invalid-login-error and reruns. "
   (setf *user-address* nil)
   :logged-out)
 
+(defun logout-2 ()
+  "logs out currently logged in user. TODO: check if this actually logs out user. "
+  (multiple-value-bind (r s)
+      (recv-json (concatenate 'string "https://matrix.org/" "_matrix/client/r0/logout"))
+    (declare (ignore r))
+    (print s))
+  ;; (setf *session-user-auth* nil)
+  ;; (setf *device-id* nil)
+  ;; (setf *user-address* nil)
+  :logged-out)
+
+(defun logout-3 ()
+  (multiple-value-bind (r s)
+      (drakma:http-request (concatenate 'string *homeserver*
+					"_matrix/client/r0/logout")
+			   :want-stream t
+			   :method :post
+			   :content-type "application/json"
+			   :additional-headers
+			   `(("Authorization" . ,(concatenate 'string "Bearer "
+							      *session-user-auth*))))
+    (declare (ignore r))
+    (print s)
+    ;; (yason:parse stream :object-as :alist)
+    ))
+
 (defun login-2 ()
   "like login, except experiments with grabbing extra info from drakma. "
   (flet ((send-recv-login-data (un pw)
