@@ -53,6 +53,9 @@
 	      room-ids))))
 
 (defun update-joined-rooms ()
+  "TODO: update this to remove a room if it isnt present in what the server returns. 
+perhas have an «old rooms» list which holds rooms which weve left...? read the spec to find out 
+what to do. "
   (setf *joined-rooms* (concatenate 'list (list-joined-rooms) *joined-rooms*)))
 
 (defmethod invite-to-room ((matrix-user-id string) (room matrix-room))
@@ -81,14 +84,97 @@
 	    ((eq return 429)
 	     (print "the request was rate limited - you have sent to many requests to quickly"))))))
 
-;; (defmethod join-room ((room matrix-room))
-;;   (multiple-value-bind (stream return)
-;;       (drakma:http-request (make-api-call "_matrix/client/r0/join/" (room-id room))
-;; 			   :want-stream t
-;; 			   :method :post
-;; 			   :content-type "application/json"
+(defmethod join-room ((room matrix-room))
+  (multiple-value-bind (stream return)
+      (drakma:http-request (make-api-call "_matrix/client/r0/join/" (room-id room))
+			   :want-stream t
+			   :method :post
+			   ;; :content-type "application/json"
 			   
-;; 			   :additional-headers (authorization-header)
-;; 			   )))
+			   :additional-headers (authorization-header))
+    (let ((parsed-stream (yason:parse stream :object-as :alist)))
+      (cond ((= return 200)
+	     (print "you have joined the room"))
+	    ((= return 403)
+	     (print "you do not have permission to join this room")
+	     (print parsed-stream))
+	    ((= return 429)
+	     (print "youve sent to many requests to fast"))))))
 
-;; (defmethod request-to-join-room ((alias-or-id string)))
+(defmethod join-room ((alias-or-id string))
+  (multiple-value-bind (stream return)
+      (drakma:http-request (make-api-call "_matrix/client/r0/join/" alias-or-id)
+			   :want-stream t
+			   :method :post
+			   ;; :content-type "application/json"
+			   
+			   :additional-headers (authorization-header))
+    (let ((parsed-stream (yason:parse stream :object-as :alist)))
+      (cond ((= return 200)
+	     (print "you have joined the room"))
+	    ((= return 403)
+	     (print "you do not have permission to join this room")
+	     (print parsed-stream))
+	    ((= return 429)
+	     (print "youve sent to many requests to fast"))))))
+
+(defgeneric leave-room (room))
+
+(defmethod leave-room ((room matrix-room))
+  (multiple-value-bind (stream return)
+      (drakma:http-request (make-api-call "_matrix/client/r0/rooms/" (room-id room) "/leave")
+			   :want-stream t
+			   :method :post
+			   :additional-headers (authorization-header))
+    (let ((parsed-stream (yason:parse stream :object-as :alist)))
+      (cond ((= return 200)
+	     (print "You have successfully left the room"))
+	    ((= return 429)
+	     (print "you have sent to many requests to quickly"))))))
+
+(defmethod leave-room ((room-id string))
+  "TODO: we have to update this to modify *joined-rooms*, otherwise the client and the server will
+not be in sync"
+  (multiple-value-bind (stream return)
+      (drakma:http-request (make-api-call "_matrix/client/r0/rooms/" room-id "/leave")
+			   :want-stream t
+			   :method :post
+			   :additional-headers (authorization-header))
+    (let ((parsed-stream (yason:parse stream :object-as :alist)))
+      (cond ((= return 200)
+	     (print "You have successfully left the room"))
+	    ((= return 429)
+	     (print "you have sent to many requests to quickly"))))))
+
+(defgeneric forget-room (room))
+
+(defmethod forget-room ((room-id string))
+  (print "dont use this - we need to leave a room before we can forget it. "))
+
+(defmethod forget-room ((room matrix-room))
+  (print "dont use this - we need to leave a room before we can forget it. "))
+
+(defgeneric room-visibility (room))
+
+(defmethod room-visibility ((room matrix-room))
+  (multiple-value-bind (stream return)
+      (drakma:http-request (make-api-call "_matrix/client/r0/directory/list/room/" (room-id room))
+			   :want-stream t
+			   :method :get)
+    (let ((parsed-stream (yason:parse stream :object-as :alist)))
+      (cond ((= return 200)
+	     (print parsed-stream))
+	    ((= return 404)
+	     (print "unknown room"))))))
+
+(defmethod room-visibility ((room string))
+  (multiple-value-bind (stream return)
+      (drakma:http-request (make-api-call "_matrix/client/r0/directory/list/room/" room)
+			   :want-stream t
+			   :method :get)
+    (let ((parsed-stream (yason:parse stream :object-as :alist)))
+      (cond ((= return 200)
+	     (print parsed-stream))
+	    ((= return 404)
+	     (print "unknown room"))))))
+
