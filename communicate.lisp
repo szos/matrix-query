@@ -8,6 +8,25 @@
 (defun set-homeserver (homeserver)
   (setf *homeserver* homeserver))
 
+(defun make-api-call (&rest api-strings)
+  "takes an api string WITHOUT THE LEADING SLASH and creates an api call to the homeserver"
+  (format nil "~a~{~a~}" *homeserver* api-strings))
+
+(defun authorization-header ()
+  (cons (cons "Authorization" (concatenate 'string "Bearer "
+					   *session-user-auth*))
+	nil))
+
+(defun make-json-from-plist (list)
+  "takes a plist and generates json from it"
+  (with-output-to-string (str)
+    (yason:encode-plist list str)))
+
+(defun make-json-from-alist (list)
+  "takes a alist and generates json from it"
+  (with-output-to-string (str)
+    (yason:encode-alist list str)))
+
 (defun send-json (url content &rest key-plist)
   "sends a «post» to the specified url, with the users auth token included. parses results as 
 an alist"
