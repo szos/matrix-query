@@ -63,25 +63,6 @@ invalid-login-error and reruns. "
 	(format nil "User ~a is already logged in" *user-address*))))
 
 (defun logout ()
-  "logs out currently logged in user. TODO: check if this actually logs out user. "
-  (recieve-json (concatenate 'string "https://matrix.org/" "_matrix/client/r0/logout"))
-  (setf *session-user-auth* nil)
-  (setf *device-id* nil)
-  (setf *user-address* nil)
-  :logged-out)
-
-(defun logout-2 ()
-  "logs out currently logged in user. TODO: check if this actually logs out user. "
-  (multiple-value-bind (r s)
-      (recv-json (concatenate 'string "https://matrix.org/" "_matrix/client/r0/logout"))
-    (declare (ignore r))
-    (print s))
-  ;; (setf *session-user-auth* nil)
-  ;; (setf *device-id* nil)
-  ;; (setf *user-address* nil)
-  :logged-out)
-
-(defun logout-3 ()
   (multiple-value-bind (r s)
       (drakma:http-request (concatenate 'string *homeserver*
 					"_matrix/client/r0/logout")
@@ -93,8 +74,9 @@ invalid-login-error and reruns. "
 							      *session-user-auth*))))
     (declare (ignore r))
     (print s)
-    ;; (yason:parse stream :object-as :alist)
-    ))
+    (setf *session-user-auth* nil)
+    (setf *device-id* nil)
+    (setf *user-address* nil)))
 
 (defun login-2 ()
   "like login, except experiments with grabbing extra info from drakma. "
@@ -146,9 +128,3 @@ invalid-login-error and reruns. "
     (print status-code)
     (yason:parse response :object-as :alist)))
 
-;; (defun change-password ()
-;;   "changes the password for the current user"
-;;   (let* ((new-pw ((lambda ()
-;; 		    (princ "Enter new password: ")
-;; 		    (read-line)))))
-;;     ))
