@@ -13,4 +13,5 @@
                (:file "matrix-query")
 	       (:file "session")
 	       (:file "communicate")
-	       ))
+	       (:file "room")
+	       (:file "room-sync")))
