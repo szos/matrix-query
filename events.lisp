@@ -136,13 +136,11 @@ and generates a conditional statement using string-equal to compare everything."
 
 (defmethod generate-text ((event member-message-event))
   "TODO: make this differentiate based on invite vs join, etc"
-  
-  (let ((membership-status (membership event)))
-    (string-case membership-status
+  (string-case (membership event)
 	(("join" (format nil "~a joined the room" (display-name event)))
 	 ("invite" (format nil "~a was invited to the room by ~a" (display-name event) (sender event))))
       (format nil "Member Name: ~a~%Sender: ~a~%~a~%~a" (display-name event) (sender event)
-	  (membership event) (content event)))))
+	  (membership event) (content event))))
 
 (defmethod generate-text ((event create-room-event))
   (format nil "Creator: ~a" (creator event)))
