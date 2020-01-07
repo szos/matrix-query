@@ -12,7 +12,15 @@
    (members :initarg :members ; this should be a list of room-member objects
 	    :accessor members)
    (topic :initarg :topic
-	  :accessor topic)))
+	  :accessor topic)
+   (next-batch :initarg :next-batch
+	       :accessor next-batch)
+   (prev-batch :initarg :prev-batch
+	       :accessor prev-batch)
+   (timeline :initarg :timeline
+	     :accessor timeline)
+   (messages :initarg :messages
+	     :accessor messages)))
 
 (defclass room-member ()
   ;; holds info on a member of a room, their power levels, etc
@@ -27,6 +35,12 @@
 
 (defparameter *joined-rooms* nil
   "a list of joined rooms, in the form of room objects")
+
+(defparameter *current-room* nil
+  "holds the current room")
+
+(defun joined-rooms ()
+  *joined-rooms*)
 
 (defun list-joined-rooms ()
   "querys the users joined rooms and returns a list of room objects not present in *joined-rooms*"
@@ -177,4 +191,24 @@ not be in sync"
 	     (print parsed-stream))
 	    ((= return 404)
 	     (print "unknown room"))))))
+
+(defun current-room ()
+  *current-room*)
+
+(defgeneric set-current-room (room-id))
+
+(defmethod set-current-room ((room matrix-room))
+  (unless (eq room *current-room*)
+    (setf *current-room* room)))
+
+(defmethod set-current-room ((room string))
+  (let ((new nil))
+    (loop for room-obj in *joined-rooms*
+       do (setf new
+		(cond ((string-equal room (room-id room-obj))
+		       room-obj)
+		      ((member room (aliases room-obj) :test #'string-equal)
+		       room-obj))))
+    (unless (eq new *current-room*)
+      (setf *current-room* new))))
 
