@@ -25,7 +25,7 @@ for example: @bob:matrix.org")
 
 (defparameter *login-info* nil)
 
-(defun login ()
+(defun login-from-repl ()
   "logs in a user and stores relevant data such as access token. handles reading username
 and password. If an invalid password error is returned from the server, signals the 
 invalid-login-error and reruns. "
@@ -78,7 +78,7 @@ invalid-login-error and reruns. "
     (setf *device-id* nil)
     (setf *user-address* nil)))
 
-(defun login-2 ()
+(defun login (username password)
   "like login, except experiments with grabbing extra info from drakma. "
   (flet ((send-recv-login-data (un pw)
 	   (let ((stream
@@ -99,10 +99,7 @@ invalid-login-error and reruns. "
 	     (setf (flexi-streams:flexi-stream-external-format stream) :utf-8)
 	     (yason:parse stream :object-as :alist))))
     (if (not *session-user-auth*)
-	(handler-case 
-	    (let* ((username (read-username))
-		   (password (read-password))
-		   (data (send-recv-login-data username password))
+	(let* ((data (send-recv-login-data username password))
 		   (token (cdr (assoc "access_token" data :test #'string=)))
 		   (device-id (cdr (assoc "device_id" data :test #'string=)))
 		   (user-id (cdr (assoc "user_id" data :test #'string=))))
@@ -112,9 +109,20 @@ invalid-login-error and reruns. "
 	      (setf *session-user-auth* token)
 	      (setf *device-id* device-id)
 	      (setf *user-address* user-id))
-	  (invalid-login-error () (progn
-				    (format t "Incorrect username or password, try again~%")
-				    (login))))
+	;; (handler-case 
+	;;     (let* ((data (send-recv-login-data username password))
+	;; 	   (token (cdr (assoc "access_token" data :test #'string=)))
+	;; 	   (device-id (cdr (assoc "device_id" data :test #'string=)))
+	;; 	   (user-id (cdr (assoc "user_id" data :test #'string=))))
+	;;       (when (equal (car data) '("error" . "Invalid password"))
+	;; 	;;(return-from login :invalid-credentials)
+	;; 	(error 'invalid-login-error :text "invalid password, try again"))
+	;;       (setf *session-user-auth* token)
+	;;       (setf *device-id* device-id)
+	;;       (setf *user-address* user-id))
+	;;   (invalid-login-error () (progn
+	;; 			    (format t "Incorrect username or password, try again~%")
+	;; 			    (login))))
 	(format nil "User ~a is already logged in" *user-address*))))
 
 (defun whoami ()
