@@ -14,4 +14,5 @@
 	       (:file "session")
 	       (:file "communicate")
 	       (:file "room")
-	       (:file "room-sync")))
+	       (:file "room-sync")
+	       (:file "events")))
