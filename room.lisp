@@ -130,7 +130,9 @@ what to do. "
 	     (print "you do not have permission to join this room")
 	     (print parsed-stream))
 	    ((= return 429)
-	     (print "youve sent to many requests to fast"))))))
+	     (print "youve sent to many requests to fast"))
+	    (t
+	     (print "something went wrong"))))))
 
 (defgeneric leave-room (room))
 
