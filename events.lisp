@@ -53,6 +53,10 @@
 	       :initarg :membership
 	       :accessor membership)))
 
+;; (defclass image-message-event (message-event)
+;;   ;; ((image-host-server :image-host-server))
+;;   )
+
 ;; (("event_id" . "$hKOu44aLCt3M1lPJkAdM7uHXOEvpYbluuhpqlkhaqqw")
 ;;  ("unsigned" ("age" . 78757815)) ("origin_server_ts" . 1578153432635)
 ;;  ("state_key" . "@testing-for-lisp-client:matrix.org")
@@ -156,7 +160,7 @@ and generates a conditional statement using string-equal to compare everything."
 	(content (cdr (assoc "content" event :test #'string-equal))))
     (string-case type
 		 (("m.room.message"
-		   (let ((message-type (cdr (assoc "msgtype" (cdr content) :test #'string-equal))))
+		   (let ((message-type (cdr (assoc "msgtype" content :test #'string-equal))))
 		     (string-case message-type
 			 (("m.text"
 			   (make-instance 'text-message-event
