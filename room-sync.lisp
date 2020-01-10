@@ -40,6 +40,40 @@
 				    :prev-batch (cdr (third timeline))
 				    :timeline timeline)))))))
 
+(defparameter *initial-sync-raw-room-data* nil)
+
+(defun initial-sync (&optional dont-set-next-batch)
+  (multiple-value-bind (stream return)
+      (drakma:http-request (make-api-call "_matrix/client/r0/sync")
+			   :want-stream t
+			   :method :get
+			   :additional-headers (authorization-header))
+    (print return)
+    (let ((parsed-stream (yason:parse stream :object-as :alist)))
+      ;; (print return)
+      ;; (print parsed-stream)
+      (let* ((next-batch (cdar parsed-stream))
+	     (device-one-time-keys-count (cadr parsed-stream))
+	     (groups (caddr parsed-stream))
+	     (rooms (cadddr parsed-stream))
+	     (join (cadddr rooms)))
+	(unless dont-set-next-batch
+	  (setf *next-batch* next-batch))
+	(setf *initial-sync-raw-room-data* rooms)
+	;; (print "join here:")
+	;; (print join)
+	(loop for room in (cdr join)
+	   collect (let ((room-id (car room))
+			 (summary (cadr room))
+			 (notifications (caddr room))
+			 (ephemeral (cadddr room))
+			 (account-data (fifth room))
+			 (state (sixth room))
+			 (timeline (seventh room)))
+		     (make-instance 'matrix-room :room-id room-id
+				    :prev-batch (cdr (third timeline))
+				    :timeline (generate-events-from-room-timeline timeline))))))))
+
 (defun generate-events-from-room-timeline (room-timeline-list)
   (let ((timeline-events (strsoc "events" (if (stringp (car room-timeline-list))
 					      (cdr room-timeline-list)
@@ -47,7 +81,36 @@
     (loop for event in timeline-events
        collect (make-event-object event))))
 
-(defparameter *new-room-text* (sync-room-test))
+(defun view-room-timeline (room)
+  (loop for event in (timeline room)
+     do (print (generate-text event))))
+
+(defun test-get-image () ;; (mcx-url)
+  (multiple-value-bind (stream return)
+      (drakma:http-request (make-api-call "_matrix/media/r0/download/" "matrix.org/KQFNMVsHYyBNwPmRyYfHuwVS")
+			   :method :get
+			   :want-stream t
+			   :additional-headers (authorization-header))
+    (print "http request done")
+    (with-open-file
+	(outfile "/home/szos/new-imgage.jpg"
+		 :direction :output
+		 :if-exists :supersede
+		 :element-type '(unsigned-byte 8))
+      (loop for byte = (read-byte stream nil)
+	 while byte
+	 do (write-byte byte outfile)))))
+
+;; (defun aquire-image (matrix-api-call)
+;;   (multiple-value-bind (stream return)
+;;       (drakma:http-request matrix-api-call
+;; 			   :want-stream t
+;; 			   :method :get
+;; 			   :additional-headers (authorization-header))
+;;     (with-open-file )))
+
+(defparameter *new-room-text* nil ;; (sync-room-test)
+  )
 
 ;; (defmethod sync-room (()))
 
