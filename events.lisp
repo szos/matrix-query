@@ -116,6 +116,10 @@ and generates a conditional statement using string-equal to compare everything."
 	 (t
 	  ,@otherwise)))
 
+(defun strsoc (string alist)
+  "returns the value portion of the alist"
+  (cdr (assoc string alist :test #'string-equal)))
+
 ;; (defgeneric display-text (event))
 
 ;; (defmethod display-text ((event event) stream))
@@ -135,7 +139,6 @@ and generates a conditional statement using string-equal to compare everything."
   (format nil "Sender: ~a~%  ~a" (sender event) (body event)))
 
 (defmethod generate-text ((event member-message-event))
-  "TODO: make this differentiate based on invite vs join, etc"
   (string-case (membership event)
 	(("join" (format nil "~a joined the room" (display-name event)))
 	 ("invite" (format nil "~a was invited to the room by ~a" (display-name event) (sender event))))
@@ -145,7 +148,60 @@ and generates a conditional statement using string-equal to compare everything."
 (defmethod generate-text ((event create-room-event))
   (format nil "Creator: ~a" (creator event)))
 
-(defparameter *rooms-test* (sync-room-test))
+(defun make-event-object (event)
+  (let ((event-id (cdr (assoc "event_id" event :test #'string-equal)))
+	(origin-server-ts (cdr (assoc "origin_server_ts" event :test #'string-equal)))
+	(type (cdr (assoc "type" event :test #'string-equal)))
+	(sender (cdr (assoc "sender" event :test #'string-equal)))
+	(content (cdr (assoc "content" event :test #'string-equal))))
+    (string-case type
+		 (("m.room.message"
+		   (let ((message-type (cdr (assoc "msgtype" (cdr content) :test #'string-equal))))
+		     (string-case message-type
+			 (("m.text"
+			   (make-instance 'text-message-event
+					  :event-id event-id
+					  :origin-server origin-server-ts
+					  :sender sender
+					  :content content
+					  :body (cdr (cadr content)))))
+		       (make-instance 'message-event
+				      :event-id event-id
+				      :origin-server origin-server-ts
+				      :event-type type
+				      :sender sender
+				      :content content))))
+		  ("m.room.member"
+		   (make-instance 'member-message-event
+				  :event-id event-id
+				  :origin-server origin-server-ts
+				  :sender sender
+				  :content content
+				  :state-key (cdr (assoc "state_key" event :test #'string-equal))
+				  :avatar-url (cdr (assoc "avatar_url" content
+							  :test #'string-equal))
+				  :display-name (cdr (assoc "displayname" content
+							    :test #'string-equal))
+				  :membership (cdr (assoc "membership" content
+							  :test #'string-equal))))
+		  ("m.room.create"
+		   (make-instance 'create-room-event
+				  :event-id event-id
+				  :origin-server origin-server-ts
+				  :sender sender
+				  :content content
+				  :state-key (strsoc "state_key" event)
+				  :creator (strsoc "creator" content)
+				  :federate (strsoc "m.federate" content)
+				  :room-version (strsoc "room_version" content))))
+      (make-instance 'message-event
+		     :event-id event-id
+		     :event-type type
+		     :origin-server origin-server-ts
+		     :sender sender
+		     :content content))))
+
+;; (defparameter *rooms-test* (sync-room-test))
 
 (defun update-rooms-test-to-objs ()
   (loop for room in *rooms-test*
@@ -209,45 +265,45 @@ and generates a conditional statement using string-equal to compare everything."
 
 ;; (defparameter *new-room-list* nil)
 
-(defparameter *event-testing* ; needs rooms-test
-  (loop for event in (cdr (fourth (timeline (car *rooms-test*))))
-     collect (let ((event-id (assoc "event_id" event :test #'string-equal))
-		   (origin-server-ts (assoc "origin_server_ts" event :test #'string-equal))
-		   (type (assoc "type" event :test #'string-equal))
-		   (sender (assoc "sender" event :test #'string-equal))
-		   (content (assoc "content" event :test #'string-equal)))
-	       (string-case (cdr type)
-		   (("m.room.message"
-		     (let ((message-type (cdr (assoc "msgtype" (cdr content) :test #'string-equal))))
-		       (cond ((string-equal message-type "m.text") 
-			      (make-instance 'text-message-event :event-id (cdr event-id)
-					     :origin-server (cdr origin-server-ts)
-					     :sender (cdr sender)
-					     :content (cdr content)
-					     :body (cdr (cadr (cdr content)))))
-			     (t
-			      (make-instance 'message-event :event-id (cdr event-id)
-					     :origin-server (cdr origin-server-ts)
-					     :sender (cdr sender)
-					     :content (cdr content))))))
-		    ("m.room.member"
-		     (make-instance 'member-message-event
-				    :event-id (cdr event-id)
-				    :origin-server (cdr origin-server-ts)
-				    :sender (cdr sender)
-				    :content (cdr content)
-				    :state-key (cdr (assoc "state_key" event :test #'string-equal))
-				    :avatar-url (cdr (assoc "avatar_url" (cdr content)
-							    :test #'string-equal))
-				    :display-name (cdr (assoc "displayname" (cdr content)
-							      :test #'string-equal))
-				    :membership (cdr (assoc "membership" (cdr content)
-							    :test #'string-equal)))))
-		 (make-instance 'message-event
-				:event-id (cdr event-id)
-				:origin-server (cdr origin-server-ts)
-				:sender (cdr sender)
-				:content (cdr content))))))
+;; (defparameter *event-testing* ; needs rooms-test
+;;   (loop for event in (cdr (fourth (timeline (car *rooms-test*))))
+;;      collect (let ((event-id (assoc "event_id" event :test #'string-equal))
+;; 		   (origin-server-ts (assoc "origin_server_ts" event :test #'string-equal))
+;; 		   (type (assoc "type" event :test #'string-equal))
+;; 		   (sender (assoc "sender" event :test #'string-equal))
+;; 		   (content (assoc "content" event :test #'string-equal)))
+;; 	       (string-case (cdr type)
+;; 		   (("m.room.message"
+;; 		     (let ((message-type (cdr (assoc "msgtype" (cdr content) :test #'string-equal))))
+;; 		       (cond ((string-equal message-type "m.text") 
+;; 			      (make-instance 'text-message-event :event-id (cdr event-id)
+;; 					     :origin-server (cdr origin-server-ts)
+;; 					     :sender (cdr sender)
+;; 					     :content (cdr content)
+;; 					     :body (cdr (cadr (cdr content)))))
+;; 			     (t
+;; 			      (make-instance 'message-event :event-id (cdr event-id)
+;; 					     :origin-server (cdr origin-server-ts)
+;; 					     :sender (cdr sender)
+;; 					     :content (cdr content))))))
+;; 		    ("m.room.member"
+;; 		     (make-instance 'member-message-event
+;; 				    :event-id (cdr event-id)
+;; 				    :origin-server (cdr origin-server-ts)
+;; 				    :sender (cdr sender)
+;; 				    :content (cdr content)
+;; 				    :state-key (cdr (assoc "state_key" event :test #'string-equal))
+;; 				    :avatar-url (cdr (assoc "avatar_url" (cdr content)
+;; 							    :test #'string-equal))
+;; 				    :display-name (cdr (assoc "displayname" (cdr content)
+;; 							      :test #'string-equal))
+;; 				    :membership (cdr (assoc "membership" (cdr content)
+;; 							    :test #'string-equal)))))
+;; 		 (make-instance 'message-event
+;; 				:event-id (cdr event-id)
+;; 				:origin-server (cdr origin-server-ts)
+;; 				:sender (cdr sender)
+;; 				:content (cdr content))))))
   
 
 
