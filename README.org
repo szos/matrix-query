@@ -2,3 +2,20 @@
 #+author: szos
 
 This is a package to query a matrix homeserver, to get messages and send messages, etc
+
+* Contents 
+** communicate.lisp
+   Contains general variables and functions for talking to the matrix homeserver. Examples inlude:
+   - /Variable/ *\*homeserver\** 
+     - a string containing the users homeserver
+   - /Function/ *make-api-call*
+     - /Syntax:/ *make-api-call* /&rest api-strings/ → /string/
+     - *Arguments*
+       - /api-strings/ --- list of strings
+     - *Description* concatenates api-strings with the homeserver to generate an api url.
+** events.lisp
+** matrix-query.lisp
+** misc-functions.lisp
+** room-sync.lisp
+** room.lisp
+** session.lisp
