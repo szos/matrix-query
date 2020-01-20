@@ -88,12 +88,12 @@ invalid-login-error and reruns. "
 					   :want-stream t
 					   :method :post
 					   :content-type "application/json"
-					   :content (concatenate 'string
-								 "{\"type\":"
-								 "\"m.login.password\", "
-								 "\"user\":\"" un
-								 "\", \"password\":\"" pw
-								 "\"}"))
+					   :content (make-json-from-alist
+						     (list (cons "type" "m.login.password")
+							   (cons "user" un)
+							   (cons "password" pw)))
+;;; (concatenate 'string "{\"type\":" "\"m.login.password\", " "\"user\":\"" un
+;;; "\", \"password\":\"" pw "\"}"))
 		    (setf *login-info* return-code)
 		    response)))
 	     (setf (flexi-streams:flexi-stream-external-format stream) :utf-8)
