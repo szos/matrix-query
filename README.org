@@ -7,14 +7,23 @@ This is a package to query a matrix homeserver, to get messages and send message
 ** communicate.lisp
    Contains general variables and functions for talking to the matrix homeserver. Examples inlude:
    - /Variable/ *​*homeserver** 
-     - a string containing the users homeserver
+     - *Description* a string containing the users homeserver
    - /Function/ *make-api-call*
-     - /Syntax:/ *make-api-call* /&rest api-strings/ → /string/
+     - *Syntax: make-api-call* /&rest api-strings/ → /string/
      - *Arguments*
        - /api-strings/ --- list of strings
      - *Description* concatenates api-strings with the homeserver to generate an api url.
 ** events.lisp
 ** matrix-query.lisp
+   Contains general use functions and macros
+   - /Macro/ *string-case*
+     - *Syntax: string-case* /string matches &body otherwise/ → /result/
+     - *Arguments*
+       - /string/ --- a string to match against
+       - /matches/ --- a list of possible matching strings and what to do if they match, with an implicit progn
+	 - (("string" (print x) (print y))
+       - /otherwise/ --- a list of forms to evaluate in the event that no strings match
+     - *Description* expands into a cond statement comparing strings with /string-equal/
 ** misc-functions.lisp
 ** room-sync.lisp
 ** room.lisp
