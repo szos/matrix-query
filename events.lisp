@@ -42,6 +42,9 @@
 	 :initarg :body
 	 :accessor body)))
 
+(defclass media-message-event (message-event)
+  ())
+
 (defclass member-message-event (state-event)
   ((avatar-url :initform nil
 	       :initarg :avatar-url
@@ -107,19 +110,6 @@
 	 :accessor body
 	 :documentation "text body of a message event containing only text")))
 
-(defmacro string-case (string matches &body otherwise)
-  "this macro takes a string and a list of matches and what they will do, formed like so:
-\(\"match-string\" \(do this thing\)
-                   \(do this other thing\)\)
-and generates a conditional statement using string-equal to compare everything."
-  `(cond ,@(mapcar (lambda (match)
-		    "match is a list with car as the string to match against"
-		    `((string-equal ,string ,(car match))
-		      ,@(cdr match)))
-		   matches)
-	 (t
-	  ,@otherwise)))
-
 (defun strsoc (string alist)
   "returns the value portion of the alist"
   (cdr (assoc string alist :test #'string-equal)))
@@ -159,45 +149,51 @@ and generates a conditional statement using string-equal to compare everything."
 	(sender (cdr (assoc "sender" event :test #'string-equal)))
 	(content (cdr (assoc "content" event :test #'string-equal))))
     (string-case type
-		 (("m.room.message"
-		   (let ((message-type (cdr (assoc "msgtype" content :test #'string-equal))))
-		     (string-case message-type
-			 (("m.text"
-			   (make-instance 'text-message-event
-					  :event-id event-id
-					  :origin-server origin-server-ts
-					  :sender sender
-					  :content content
-					  :body (cdr (cadr content)))))
-		       (make-instance 'message-event
-				      :event-id event-id
-				      :origin-server origin-server-ts
-				      :event-type type
-				      :sender sender
-				      :content content))))
-		  ("m.room.member"
-		   (make-instance 'member-message-event
-				  :event-id event-id
-				  :origin-server origin-server-ts
-				  :sender sender
-				  :content content
-				  :state-key (cdr (assoc "state_key" event :test #'string-equal))
-				  :avatar-url (cdr (assoc "avatar_url" content
-							  :test #'string-equal))
-				  :display-name (cdr (assoc "displayname" content
-							    :test #'string-equal))
-				  :membership (cdr (assoc "membership" content
-							  :test #'string-equal))))
-		  ("m.room.create"
-		   (make-instance 'create-room-event
-				  :event-id event-id
-				  :origin-server origin-server-ts
-				  :sender sender
-				  :content content
-				  :state-key (strsoc "state_key" event)
-				  :creator (strsoc "creator" content)
-				  :federate (strsoc "m.federate" content)
-				  :room-version (strsoc "room_version" content))))
+	(("m.room.message"
+	  (let ((message-type (cdr (assoc "msgtype" content :test #'string-equal))))
+	    (string-case message-type
+		(("m.text"
+		  (make-instance 'text-message-event
+				 :event-id event-id
+				 :event-type type
+				 :origin-server origin-server-ts
+				 :sender sender
+				 :content content
+				 :body (cdr (cadr content)))))
+	      (make-instance 'message-event
+			     :event-id event-id
+			     :origin-server origin-server-ts
+			     :event-type type
+			     :sender sender
+			     :content content))))
+	 ("m.room.member"
+	  (make-instance 'member-message-event
+			 :event-id event-id
+			 :event-type type
+			 :origin-server origin-server-ts
+			 :sender sender
+			 :content content
+			 :state-key (cdr (assoc "state_key" event :test #'string-equal))
+			 :avatar-url (cdr (assoc "avatar_url" content
+						 :test #'string-equal))
+			 :display-name (cdr (assoc "displayname" content
+						   :test #'string-equal))
+			 :membership (cdr (assoc "membership" content
+						 :test #'string-equal))))
+	 ("m.room.create"
+	  (make-instance 'create-room-event
+			 :event-id event-id
+			 :event-type type
+			 :origin-server origin-server-ts
+			 :sender sender
+			 :content content
+			 :state-key (strsoc "state_key" event)
+			 :creator (strsoc "creator" content)
+			 :federate (strsoc "m.federate" content)
+			 :room-version (strsoc "room_version" content)))
+	 ;; ("m.room.name"
+	 ;;  )
+	 )
       (make-instance 'message-event
 		     :event-id event-id
 		     :event-type type
