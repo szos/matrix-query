@@ -19,6 +19,9 @@
 	       :accessor prev-batch)
    (timeline :initarg :timeline
 	     :accessor timeline)
+   (state :initarg :state
+	  :accessor state
+	  :initform nil)
    (messages :initarg :messages
 	     :accessor messages)))
 
@@ -58,7 +61,7 @@
     (let* ((parsed (yason:parse stream :object-as :alist))
 	   (room-ids (cdr (assoc "joined_rooms" parsed :test #'string-equal))))
       (print parsed)
-      (loop for room in *joined-rooms*
+      (loop :for room :in *joined-rooms*
 	 :when (member (room-id room) room-ids :test #'string-equal)
 	   :do (setf room-ids (remove (room-id room) room-ids :test #'string-equal)))
       (print room-ids)
@@ -204,13 +207,18 @@ not be in sync"
     (setf *current-room* room)))
 
 (defmethod set-current-room ((room string))
-  (let ((new nil))
-    (loop for room-obj in *joined-rooms*
-       do (setf new
-		(cond ((string-equal room (room-id room-obj))
-		       room-obj)
-		      ((member room (aliases room-obj) :test #'string-equal)
-		       room-obj))))
-    (unless (eq new *current-room*)
-      (setf *current-room* new))))
+  (set-current-room
+   (loop :for room :in *joined-rooms*
+      :when (string-equal room-id (room-id room))
+      :return room))
+  ;; (let ((new nil))
+  ;;   (loop for room-obj in *joined-rooms*
+  ;;      do (setf new
+  ;; 		(cond ((string-equal room (room-id room-obj))
+  ;; 		       room-obj)
+  ;; 		      ((member room (aliases room-obj) :test #'string-equal)
+  ;; 		       room-obj))))
+  ;;   (unless (eq new *current-room*)
+  ;;     (setf *current-room* new)))
+  )
 
