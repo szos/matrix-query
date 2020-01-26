@@ -9,6 +9,8 @@
 	    :accessor room-id)
    (aliases :initarg :aliases
 	    :accessor aliases)
+   (canonical-alias :initarg :canonical-alias
+		    :accessor canonical-alias)
    (members :initarg :members ; this should be a list of room-member objects
 	    :accessor members)
    (topic :initarg :topic
@@ -23,7 +25,9 @@
 	  :accessor state
 	  :initform nil)
    (messages :initarg :messages
-	     :accessor messages)))
+	     :accessor messages)
+   (creator :initarg :creator
+	    :accessor creator)))
 
 (defclass room-member ()
   ;; holds info on a member of a room, their power levels, etc
@@ -35,6 +39,11 @@
 ;; (defmethod add-alias ((room matrix-room) (new-alias string))
 ;;   (with-slots (aliases) room
 ;;     (let* ((whole (assoc ))))))
+
+(defun room-id->room (id)
+  (loop for room in *rooms*
+     :when (string-equal (room-id room) id)
+       :return room))
 
 (defparameter *joined-rooms* nil
   "a list of joined rooms, in the form of room objects")
