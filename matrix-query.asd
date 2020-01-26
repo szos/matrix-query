@@ -8,11 +8,13 @@
   :serial t
   :depends-on (#:drakma
 	       #:flexi-streams
-	       #:yason)
+	       #:yason
+	       #:string-case)
   :components ((:file "package")
                (:file "matrix-query")
 	       (:file "session")
 	       (:file "communicate")
 	       (:file "room")
 	       (:file "room-sync")
-	       (:file "events")))
+	       (:file "events")
+	       (:file "api-calls")))
