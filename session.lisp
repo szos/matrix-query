@@ -78,13 +78,16 @@ invalid-login-error and reruns. "
     (setf *device-id* nil)
     (setf *user-address* nil)))
 
-(defun login (username password)
+(defun login (username password &optional (homeserver "https://matrix.org/"
+						      homeserver-provided-p))
   "like login, except experiments with grabbing extra info from drakma. "
+  (when homeserver-provided-p (setf *homeserver* homeserver))
   (flet ((send-recv-login-data (un pw)
 	   (let ((stream
 		  (multiple-value-bind (response return-code info puri-uri
 						 stream something other-thing)
-		      (drakma:http-request "https://matrix.org/_matrix/client/r0/login"
+		      (drakma:http-request (concatenate 'string	*homeserver*
+							"_matrix/client/r0/login")
 					   :want-stream t
 					   :method :post
 					   :content-type "application/json"
@@ -93,7 +96,8 @@ invalid-login-error and reruns. "
 							   (cons "user" un)
 							   (cons "password" pw)))
 ;;; (concatenate 'string "{\"type\":" "\"m.login.password\", " "\"user\":\"" un
-;;; "\", \"password\":\"" pw "\"}"))
+;;; "\", \"password\":\"" pw "\"}")
+					   )
 		    (setf *login-info* return-code)
 		    response)))
 	     (setf (flexi-streams:flexi-stream-external-format stream) :utf-8)
