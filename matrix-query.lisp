@@ -2,17 +2,13 @@
 
 (in-package #:matrix-query)
 
-(defmacro string-case (string matches &body otherwise)
-  "this macro takes a string and a list of matches and what they will do, formed like so:
-\(\"match-string\" \(do this thing\)
-                   \(do this other thing\)\)
-and generates a conditional statement using string-equal to compare everything."
-  `(cond ,@(mapcar (lambda (match)
-		     "match is a list with car as the string to match against"
-		     `((string-equal ,string ,(car match))
-		       ,@(cdr match)))
-		   matches)
-	 (t ,@(or otherwise '(nil)))))
+(defmacro string-case (string &body matches)
+  `(string-case:string-case (,string)
+     ,@matches))
+
+(let ((txid 0))
+  (defun unique-txid ()
+    (incf txid)))
 
 ;;; obsolete, dont document. 
 
