@@ -4,7 +4,8 @@
 
 (defclass matrix-room ()
   ((name :initarg :name
-	 :accessor name)
+	 :accessor name
+	 :initform "No name set")
    (room-id :initarg :room-id
 	    :accessor room-id)
    (aliases :initarg :aliases
@@ -14,7 +15,8 @@
    (members :initarg :members ; this should be a list of room-member objects
 	    :accessor members)
    (topic :initarg :topic
-	  :accessor topic)
+	  :accessor topic
+	  :initform "No topic set")
    (next-batch :initarg :next-batch
 	       :accessor next-batch)
    (prev-batch :initarg :prev-batch
