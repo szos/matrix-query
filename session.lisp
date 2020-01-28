@@ -76,7 +76,8 @@ invalid-login-error and reruns. "
     (print s)
     (setf *session-user-auth* nil)
     (setf *device-id* nil)
-    (setf *user-address* nil)))
+    (setf *user-address* nil)
+    (setf *rooms* nil)))
 
 (defun login (username password &optional (homeserver "https://matrix.org/"
 						      homeserver-provided-p))
@@ -84,21 +85,14 @@ invalid-login-error and reruns. "
   (when homeserver-provided-p (setf *homeserver* homeserver))
   (flet ((send-recv-login-data (un pw)
 	   (let ((stream
-		  (multiple-value-bind (response return-code info puri-uri
-						 stream something other-thing)
-		      (drakma:http-request (concatenate 'string	*homeserver*
-							"_matrix/client/r0/login")
-					   :want-stream t
-					   :method :post
-					   :content-type "application/json"
-					   :content (make-json-from-alist
-						     (list (cons "type" "m.login.password")
-							   (cons "user" un)
-							   (cons "password" pw)))
-;;; (concatenate 'string "{\"type\":" "\"m.login.password\", " "\"user\":\"" un
-;;; "\", \"password\":\"" pw "\"}")
-					   )
+		  (multiple-value-bind (return-code response)
+		      (call-api-post "_matrix/client/r0/login"  "application/json"
+				     (make-json-from-alist
+				      (list (cons "type" "m.login.password")
+					    (cons "user" un)
+					    (cons "password" pw))))
 		    (setf *login-info* return-code)
+		    (print return-code)
 		    response)))
 	     (setf (flexi-streams:flexi-stream-external-format stream) :utf-8)
 	     (yason:parse stream :object-as :alist))))
@@ -113,20 +107,6 @@ invalid-login-error and reruns. "
 	      (setf *session-user-auth* token)
 	      (setf *device-id* device-id)
 	      (setf *user-address* user-id))
-	;; (handler-case 
-	;;     (let* ((data (send-recv-login-data username password))
-	;; 	   (token (cdr (assoc "access_token" data :test #'string=)))
-	;; 	   (device-id (cdr (assoc "device_id" data :test #'string=)))
-	;; 	   (user-id (cdr (assoc "user_id" data :test #'string=))))
-	;;       (when (equal (car data) '("error" . "Invalid password"))
-	;; 	;;(return-from login :invalid-credentials)
-	;; 	(error 'invalid-login-error :text "invalid password, try again"))
-	;;       (setf *session-user-auth* token)
-	;;       (setf *device-id* device-id)
-	;;       (setf *user-address* user-id))
-	;;   (invalid-login-error () (progn
-	;; 			    (format t "Incorrect username or password, try again~%")
-	;; 			    (login))))
 	(format nil "User ~a is already logged in" *user-address*))))
 
 (defun whoami ()
