@@ -9,12 +9,13 @@
   :depends-on (#:drakma
 	       #:flexi-streams
 	       #:yason
-	       #:string-case)
+	       #:string-case
+	       #:bt-semaphore)
   :components ((:file "package")
                (:file "matrix-query")
+	       (:file "room")
+	       (:file "api-calls")
 	       (:file "session")
 	       (:file "communicate")
-	       (:file "room")
 	       (:file "room-sync")
-	       (:file "events")
-	       (:file "api-calls")))
+	       (:file "events")))
