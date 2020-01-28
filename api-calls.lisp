@@ -1,10 +1,12 @@
 
 (in-package :matrix-query)
 
+(defparameter *thread-lock* (bt:make-lock))
+
 (defmacro call-api-get ((&body api-string) &key (authorization-header t))
   `(multiple-value-bind (stream return-code)
        (drakma:http-request (make-api-call ,@(if (listp api-string)
-                                                 api-string
+						 api-string
 						 (list api-string)))
 			    :want-stream t
 			    :method :get
@@ -17,7 +19,7 @@
 			 &key (authorization-header t))
   `(multiple-value-bind (stream return-code)
        (drakma:http-request (make-api-call ,@(if (listp api-string)
-                                                 api-string
+						 api-string
 						 (list api-string)))
 			    :want-stream t
 			    :method :post
