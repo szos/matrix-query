@@ -230,10 +230,10 @@
   (format nil "Sender: ~a~%  ~a~%  ~a" (sender event) (event-type event) (content event)))
 
 (defmethod generate-text ((event message-event))
-  (format nil "Sender: ~a~%  ~a~%  ~a" (sender event) (event-type event) (content event)))
+  (format nil "~a~%  ~a" (event-type event) (content event)))
 
 (defmethod generate-text ((event text-message-event))
-  (format nil "Sender: ~a~%  ~a" (sender event) (body event)))
+  (format nil "~a" (body event)))
 
 (defmethod generate-text ((event member-message-event))
   (string-case (membership event)
@@ -244,7 +244,7 @@
 	       (membership event) (content event)))))
 
 (defmethod generate-text ((event create-room-event))
-  (format nil "Creator: ~a" (creator event)))
+  (format nil "~a created the room" (creator event)))
 
 (defun make-messagetype-event (event)
   (let ((type (cdr (assoc "type" event :test #'string-equal)))
@@ -260,7 +260,9 @@
 		      :origin-server origin-server-ts
 		      :sender sender
 		      :content content
-		      :body (cdr (cadr content))
+		      ;; :body (cdr (cadr content))
+		      ;; :body (assoc "body" content :test #'string-equal)
+		      :body (strsoc "body" content)
 		      :original-form event))
       (t (make-instance 'message-event
 			:event-id event-id
