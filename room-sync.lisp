@@ -40,12 +40,20 @@
 				    :prev-batch (cdr (third timeline))
 				    :timeline timeline)))))))
 
+(defun generate-events-from-event-list (events-list &key (reverse nil))
+  (if reverse
+      (let ((ac nil))
+	(loop for event in events-list
+	   do (push (make-event-object event) ac))
+	ac)
+      (loop for event in events-list
+	 collect (make-event-object event))))
+
 (defun generate-events-from-room-timeline (room-timeline-list)
   (let ((timeline-events (strsoc "events" (if (stringp (car room-timeline-list))
 					      (cdr room-timeline-list)
 					      room-timeline-list))))
-    (loop for event in timeline-events
-       collect (make-event-object event))))
+    (generate-events-from-event-list timeline-events)))
 
 (defparameter *initial-sync-raw-room-data* nil)
 (defparameter *rooms* nil)
@@ -57,7 +65,8 @@
 			   :method :get
 			   :additional-headers (authorization-header))
     (print return)
-    (let ((parsed-stream (yason:parse stream :object-as :alist)))
+    (let ((parsed-stream (yason:parse stream :object-as :alist))
+	  (newrooms nil))
       ;; (print return)
       ;; (print parsed-stream)
       (let* ((next-batch (cdar parsed-stream))
@@ -65,12 +74,11 @@
 	     (groups (caddr parsed-stream))
 	     (rooms (cadddr parsed-stream))
 	     (join (cadddr rooms)))
-	(unless dont-set-next-batch
-	  (setf *next-batch* next-batch))
+	(unless dont-set-next-batch (setf *next-batch* next-batch))
 	(setf *initial-sync-raw-room-data* rooms)
 	;; (print "join here:")
 	;; (print join)
-	(setf *rooms*
+	(setf newrooms
 	      (loop for room in (cdr join)
 		 collect (let ((room-id (car room))
 			       (summary (cadr room))
@@ -82,11 +90,21 @@
 			   (make-instance 'matrix-room :room-id room-id
 					  :prev-batch (cdr (third timeline))
 					  :timeline (generate-events-from-room-timeline timeline)
-					  :state (generate-events-from-room-timeline state)))))))))
+					  :state (generate-events-from-room-timeline state)))))
+	(print newrooms)
+	(setf *rooms* newrooms)
+	(setup-rooms-from-state)))))
+
+(defun initial-sync-threaded ()
+  (bt:make-thread
+   (lambda ()
+     (initial-sync)
+     (print "initial sync finished"))))
 
 (defparameter *testing-update-sync* nil)
 
 (defun update-sync ()
+  "updates the timeline stuff... and only that"
   (multiple-value-bind (ret stream)
       (call-api-get ("_matrix/client/r0/sync?since=" *next-batch*))
     (let* ((parsed-stream (yason:parse stream :object-as :alist))
@@ -97,36 +115,54 @@
 	   (join (cadddr rooms))
 	   (join2 (assoc "join" (cdr rooms) :test #'string-equal)))
       (setf *testing-update-sync* parsed-stream)
-      ;; (setf *next-batch* next-batch)
+      (setf *next-batch* next-batch)
       (loop :for room :in (cdr join)
 	 do (let ((room-obj (room-id->room (car room)))
-		  (timeline (sevent room)))
-	      (setf *testing-update-sync*
+		  (timeline (seventh room)))
+	      (setf (timeline room-obj)
 		    (append (timeline room-obj)
 			    (generate-events-from-room-timeline timeline)))))
-      ;; (loop :for room :in *rooms*
-      ;; 	 do (let ((room-updates (assoc (room-id room) (cdr join) :test #'string-equal))
-      ;; 		  (roomer (cdr join)))
-      ;; 	      (let ((timeline (seventh roomer)))
-      ;; 		;; (print roomer)
-      ;; 		;; (print timeline)
-      ;; 		(setf (timeline room)
-      ;; 		      (append (timeline room)
-      ;; 			      (generate-events-from-room-timeline timeline))))))
-      ;; (print join)
-      ;; (print join2)
-      ;; (print rooms)
+      ;; (setup-rooms-from-state)
       )))
+
+(defun update-sync-threaded ()
+  (bt:make-thread
+   (lambda ()
+     (update-sync)
+     (print "update sync finished"))))
 
 (defun setup-rooms-from-state ()
   (loop for room in *rooms*
-     do (loop for event in (state room)
+     do (loop for event in (timeline room)
 	   do (case (type-of event)
 		(room-topic-event (setf (topic room) (topic event)))
 		(create-room-event (setf (creator room) (creator event)))
 		(room-name-event (setf (name room) (name event)))
 		(room-canonical-alias-event (setf (canonical-alias room)
-						  (alias event)))))))
+						  (alias event)))))
+       (loop for event in (state room)
+	  do (case (type-of event)
+	       (room-topic-event (setf (topic room) (topic event)))
+	       (create-room-event (setf (creator room) (creator event)))
+	       (room-name-event (setf (name room) (name event)))
+	       (room-canonical-alias-event (setf (canonical-alias room)
+						 (alias event)))))))
+
+(defun get-prior-events (room &optional (number-of-events 10))
+  (multiple-value-bind (ret stream)
+      (call-api-get ("_matrix/client/r0/rooms/" (room-id room) "/messages?from="
+						(prev-batch room) "&dir=b&limit="
+						number-of-events))
+    (let* ((parsed-stream (yason:parse stream :object-as :alist))
+	   (end (strsoc "end" parsed-stream)) ;should replace prev-batch
+	   (start (strsoc "start" parsed-stream))
+	   (events (strsoc "chunk" parsed-stream)))
+      (declare (ignore start))
+      (print ret)
+      (setf (prev-batch room) end)
+      (setf (timeline room)
+	    (append (generate-events-from-event-list events :reverse t)
+		    (timeline room))))))
 
 (defun view-room-timeline (room)
   (loop for event in (timeline room)
