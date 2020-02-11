@@ -3,6 +3,14 @@
 
 This is a package to query a matrix homeserver, to get messages and send messages, etc
 
+* Getting Started
+  1. Clone this git repo to somewhere it can be found by quicklisp, typically =~/quicklisp/local-projects/matrix-query=.
+  2. Load the project with ~(ql:quickload :matrix-query)~.
+     - This project depends on Drakma, and as such libssl. Your OS may have libssl under a different name than Drakma expects, and you will be hit with an error from CFFI. To get around this first find the name of your libssl with ~sudo find / -name libssl*~ and use that name in the =use-value= restart. For example on VoidLinux libssl is =libssl.so.47=, so i enter ~("libssl.so.47")~.
+  3. Login by evaluating ~(login "username"  "password" :homeserver "homeserver.org/")~.
+  4. You can now sync and send messages. 
+    
+
 * Contents 
 ** communicate.lisp
    Contains general variables and functions for talking to the matrix homeserver. Examples inlude:
