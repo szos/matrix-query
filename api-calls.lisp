@@ -58,21 +58,52 @@
 			    (cons "password" password)))
 		     :authorization-header nil)))
 
-(defgeneric test/send-text-message (room message-text))
+;;; these generic functions dont work in this file as the event classes
+;;; havent been loaded yet
 
-(defmethod test/send-text-message ((room matrix-room) (message-text string))
-  "requires transactional id [txnId]"
-  (multiple-value-bind (ret stream)
-      (call-api-put ("_matrix/client/r0/rooms/" (room-id room) "/send/m.room.message/" (unique-txid))
-		    "application/json" (make-json-from-alist
-					(list (cons "msgtype" "m.text")
-					      (cons "body" message-text))))
-    (let ((parsed (yason:parse stream :object-as :alist)))
-      (case ret
-	(200 (print "success")
-	     (update-sync))
-	(t (print "failure of some sort")
-	   (print ret))))))
+;; (defgeneric test/send-text-message (room message-text))
+
+;; (defmethod test/send-text-message ((room matrix-room) (message-text string))
+;;   "requires transactional id [txnId]"
+;;   (multiple-value-bind (ret stream)
+;;       (call-api-put ("_matrix/client/r0/rooms/" (room-id room) "/send/m.room.message/" (unique-txid))
+;; 		    "application/json" (make-json-from-alist
+;; 					(list (cons "msgtype" "m.text")
+;; 					      (cons "body" message-text))))
+;;     (let ((parsed (yason:parse stream :object-as :alist)))
+;;       (case ret
+;; 	(200 (print "success")
+;; 	     (update-sync))
+;; 	(t (print "failure of some sort")
+;; 	 (print ret))))))
+
+;; (defgeneric test/send-message (room message))
+
+;; (defmethod test/send-message ((room matrix-room) (message string))
+;;   (multiple-value-bind (ret stream)
+;;       (call-api-put ("_matrix/client/r0/rooms/" (room-id room) "/send/m.room.message/" (unique-txid))
+;; 		    "application/json" (make-json-from-alist
+;; 					(list (cons "msgtype" "m.text")
+;; 					      (cons "body" message))))
+;;     (let ((parsed (yason:parse stream :object-as :alist)))
+;;       (case ret
+;; 	(200 (print "success")
+;; 	 (update-sync))
+;; 	(t (print "failure of some sort")
+;; 	 (print ret))))))
+;; (defmethod test/send-message ((room matrix-room) (message text-message-event))
+;;   (multiple-value-bind (ret stream)
+;;       (call-api-put ("_matrix/client/r0/rooms/" (room-id room) "/send/m.room.message/" (unique-txid))
+;; 		    "application/json" (make-json-from-alist
+;; 					(list (cons "msgtype" "m.text")
+;; 					      (cons "body" (body message)))))
+;;     (let ((parsed (yason:parse stream :object-as :alist)))
+;;       (case ret
+;; 	(200 (print "success")
+;; 	 (update-sync))
+;; 	(t (print "failure of some sort")
+;; 	 (print ret))))))
+;; (defmethod test/send-message ((room matrix-room) (message media-message-event)))
 
 ;;; (defgeneric test/package-and-ship-event ())
 
