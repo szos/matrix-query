@@ -168,29 +168,81 @@
   (loop for event in (timeline room)
      do (print (generate-text event))))
 
-(defun test-get-image () ;; (mcx-url)
-  (multiple-value-bind (stream return)
-      (drakma:http-request (make-api-call "_matrix/media/r0/download/" "matrix.org/KQFNMVsHYyBNwPmRyYfHuwVS")
-			   :method :get
-			   :want-stream t
-			   :additional-headers (authorization-header))
-    (print "http request done")
+(defun upload-file (path-to-file)
+  "this function takes a path to a file, and returns the mxc uri of the uploaded 
+file. "
+  (multiple-value-bind (a b c d stream)
+      (let ((k (drakma:http-request
+		(make-api-call "_matrix/media/r0/upload?filename="
+			       (car (last (str:split "/" path-to-file))))
+		:method :post
+		:want-stream t
+		:content :continuation
+		:additional-headers (authorization-header))))
+	(funcall k (lambda (stream)
+		     (with-open-file (f path-to-file
+					:element-type '(unsigned-byte 8))
+		       (loop for byte = (read-byte f nil)
+			     while byte
+			     do (write-byte byte stream))))))
+    (declare (ignore a b c d))
+    (yason:parse stream :object-as :alist)))
+
+(defun download-file (new-file-name mxc-uri &optional (homeserver *homeserver*))
+  "takes a new file name or path, and a uri that contains the file. If the file 
+resides on a different homeserver that homeserver must be provided - the function
+treats uri's as residing on the matrix.org homeserver by default."
+  (multiple-value-bind (s r)
+      (drakma:http-request (make-explicit-api-call
+			    homeserver 
+			    "_matrix/media/r0/download/"
+			    (car (last (str:split "mxc://" mxc-uri))))
+       :method :get
+       :want-stream t
+       :additional-headers (authorization-header))
+    (declare (ignore r))
     (with-open-file
-	(outfile "/home/szos/new-imgage.jpg"
+	(outfile new-file-name
 		 :direction :output
 		 :if-exists :supersede
 		 :element-type '(unsigned-byte 8))
-      (loop for byte = (read-byte stream nil)
-	 while byte
-	 do (write-byte byte outfile)))))
+      (loop for byte = (read-byte s nil)
+	    while byte
+	    do (write-byte byte outfile)))))
 
-;; (defun aquire-image (matrix-api-call)
-;;   (multiple-value-bind (stream return)
-;;       (drakma:http-request matrix-api-call
-;; 			   :want-stream t
-;; 			   :method :get
-;; 			   :additional-headers (authorization-header))
-;;     (with-open-file )))
+(defun test/send-file (path-to-file)
+  "this finally works!! we have to loop through the file as bytes"
+  (let ((k (drakma:http-request (make-api-call
+				 "_matrix/media/r0/upload?filename="
+				 (car (last (str:split "/" path-to-file))))
+				:method :post
+				:want-stream t
+				;; :content-type "application/pdf"
+				:content :continuation
+				:additional-headers (authorization-header))))
+    (funcall k (lambda (stream)
+    		 (with-open-file (f path-to-file
+    				    :element-type '(unsigned-byte 8))
+    		   (loop for byte = (read-byte f nil)
+    			 while byte
+    			 do (write-byte byte stream)))))))
+
+(defun test/get-file (new-file-path mxc-uri)
+  (multiple-value-bind (s r)
+      (drakma:http-request (make-api-call "_matrix/media/r0/download/"
+					  (car (last (str:split "mxc://" mxc-uri))))
+			   :method :get
+			   :want-stream t
+			   :additional-headers (authorization-header))
+    (print r)
+    (with-open-file
+	(outfile new-file-path
+		 :direction :output
+		 :if-exists :supersede
+		 :element-type '(unsigned-byte 8))
+      (loop for byte = (read-byte s nil)
+	    while byte
+	    do (write-byte byte outfile)))))
 
 (defparameter *new-room-text* nil ;; (sync-room-test)
   )
