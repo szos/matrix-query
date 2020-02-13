@@ -10,7 +10,8 @@
 	       #:flexi-streams
 	       #:yason
 	       #:string-case
-	       #:bt-semaphore)
+	       #:bt-semaphore
+	       #:str)
   :components ((:file "package")
                (:file "matrix-query")
 	       (:file "room")
