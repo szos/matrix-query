@@ -8,6 +8,9 @@
 (defun set-homeserver (homeserver)
   (setf *homeserver* homeserver))
 
+(defun make-explicit-api-call (homeserver &rest api-strings)
+  (format nil "~a~{~a~}" homeserver api-strings))
+
 (defun make-api-call (&rest api-strings)
   "takes an api string WITHOUT THE LEADING SLASH and creates an api call to the homeserver"
   (format nil "~a~{~a~}" *homeserver* api-strings))
