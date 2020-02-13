@@ -3,12 +3,18 @@
 (in-package #:matrix-query)
 
 (defmacro string-case (string &body matches)
+  "i believe that string case should more closely match case."
   `(string-case:string-case (,string)
      ,@matches))
 
-(let ((txid 0))
-  (defun unique-txid ()
-    (incf txid)))
+(setf (symbol-function 'unique-txid)
+      (let ((id 0))
+	(lambda ()
+	  (incf id))))
+
+;; (let ((txid 0))
+;;   (defun unique-txid ()
+;;     (incf txid)))
 
 ;;; obsolete, dont document. 
 
