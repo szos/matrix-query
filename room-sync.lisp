@@ -166,7 +166,7 @@
 
 (defun view-room-timeline (room)
   (loop for event in (timeline room)
-     do (print (generate-text event))))
+	do (print (generate-text event))))
 
 (defun upload-file (path-to-file)
   "this function takes a path to a file, and returns the mxc uri of the uploaded 
@@ -177,6 +177,8 @@ file. "
 			       (car (last (str:split "/" path-to-file))))
 		:method :post
 		:want-stream t
+		:content-type "image/png"
+		;; :content-type (get-mime-type-from-extension path-to-file)
 		:content :continuation
 		:additional-headers (authorization-header))))
 	(funcall k (lambda (stream)
@@ -186,7 +188,9 @@ file. "
 			     while byte
 			     do (write-byte byte stream))))))
     (declare (ignore a b c d))
-    (yason:parse stream :object-as :alist)))
+    (let ((url-stuff (cdar (yason:parse stream :object-as :alist))))
+      (print url-stuff)
+      url-stuff)))
 
 (defun download-file (new-file-name mxc-uri &optional (homeserver *homeserver*))
   "takes a new file name or path, and a uri that contains the file. If the file 
