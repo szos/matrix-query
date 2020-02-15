@@ -1,0 +1,4 @@
+#+TITLE: TODO list
+
+* TODO find a way to make json container
+  the function /make-json-from-alist/ doesnt seem to have a way to make json containers. lists get converted to a json array. ~(x y)~ becomes ~[x,y]~, while I need it to become ~{x:y}~. 
