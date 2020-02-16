@@ -1,4 +1,14 @@
 #+TITLE: TODO list
 
 * TODO find a way to make json container
-  the function /make-json-from-alist/ doesnt seem to have a way to make json containers. lists get converted to a json array. ~(x y)~ becomes ~[x,y]~, while I need it to become ~{x:y}~. 
+  the function /make-json-from-alist/ doesnt seem to have a way to make json containers. lists get converted to a json array. ~(x y)~ becomes ~[x,y]~, while I need it to become ~{x:y}~. could this be possible by nesting calls to ~make-json-from-alist~?
+  This isnt necesarily needed - the specific place it is wanted is with regards to sending files. After uploading the file and getting a mxc URI, we send a message containing that URI and information about the file. Say we upload an image, we can send the basic information, but it would be better to send information about the image, like w, h, size, thumbnail, etc. We need to place this information in a container like so: =info:{ w:100, h:100 }=. 
+
+* TODO Implement propper errors and error handling
+  Currently there are NO errors implemented outside of upload-file and test/send-file, wherin upload file signals an error if a valid URI is not returned, and test/send-file catches it and refuses to send a message to the room. 
+** Possible places for errors
+*** test/send-file
+    within this file we could deal with errors returned by the homeserver. If the return code isnt 200, we have an error, and we could implement this in a better way than just echoing it. 
+
+* TODO Optimize string-case macro
+  Currently, string-case seems poorly put together - the constant use of append coupled with setf-ing an accumulator isnt as elegant as it probably could be. 
