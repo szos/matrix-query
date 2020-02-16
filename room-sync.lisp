@@ -168,6 +168,10 @@
   (loop for event in (timeline room)
 	do (print (generate-text event))))
 
+(define-condition invalid-uri-error (error)
+  ((invalid-uri :initarg :invalid-uri
+		:reader invalid-uri)))
+
 (defun upload-file (path-to-file)
   "this function takes a path to a file, and returns the mxc uri of the uploaded 
 file. "
@@ -190,7 +194,10 @@ file. "
     (declare (ignore a b c d))
     (let ((url-stuff (cdar (yason:parse stream :object-as :alist))))
       (print url-stuff)
-      url-stuff)))
+      (if (string-equal (subseq url-stuff 0 6)
+			"mxc://")
+	  url-stuff
+	  (error 'invalid-uri-error :invalid-uri url-stuff)))))
 
 (defun download-file (new-file-name mxc-uri &optional (homeserver *homeserver*))
   "takes a new file name or path, and a uri that contains the file. If the file 
