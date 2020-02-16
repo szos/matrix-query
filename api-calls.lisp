@@ -58,39 +58,45 @@
 			    (cons "password" password)))
 		     :authorization-header nil)))
 
-;;; these generic functions dont work in this file as the event classes
-;;; havent been loaded yet
+(defparameter *file-types-to-message-types*
+  '(("png" . "m.image")
+    ("mp3" . "m.audio")
+    ("ogg" . "m.audio")
+    ("jpg" . "m.image")))
 
-(defmethod test/send-file ((room string) file)
-  "this doesnt currently work - something may be wrong with the upload."
-  (let ((filename (car (last (str:split "/" file))))
-	(url (upload-file file)
-	     ;; (car (last (str:split "mxc://" (upload-file file))))
-	     ))
-    (print filename)
-    (print url)
-    (multiple-value-bind (ret stream)
-	(call-api-put ("_matrix/client/r0/rooms/" room
-			"/send/m.room.message/" (unique-txid))
-		      "application/json"
-		      ;; (make-json-from-alist
-		      ;;  (list (cons "msgtype" "m.file")
-		      ;; 	     (cons "body" filename)
-		      ;; 	     (cons "filename" filename)
-		      ;; 	     (cons "url" url)))
-		      (make-json-from-alist
-		       (list (cons "msgtype" "m.file")
-			     (cons "body" filename)
-			     (cons "filename" filename)
-			     (cons "url" url)
-			     (cons "info"
-				   "{ \"mimetype\": \"image/png\"}"))))
-      (let ((parsed (yason:parse stream :object-as :alist)))
-	(print parsed)
-	(case ret
-	  (200 (print "success"))
-	  (t (print "failure of some sort")
-	   (print ret)))))))
+(defun file->message-type (filename)
+  (let ((message-type
+	  (strsoc (string-downcase (car (last (str:split "." filename))))
+		  *file-types-to-message-types*)))
+    (or message-type "m.file")))
+
+(defun test/send-file (room-id file &optional msgtype)
+  "This takes a room id, a path to a file, and optionally a message type. First 
+uploading the file, then sending a message to the room. All files are sent as a "
+  (restart-case 
+      (let* ((filename (car (last (str:split "/" file))))
+	     (url (upload-file file))
+	     (json  (make-json-from-alist
+		     (list (cons "msgtype" (or msgtype
+					       (file->message-type file)))
+			   (cons "body" filename)
+			   (cons "filename" filename)
+			   (cons "url" url)))))
+	(print filename)
+	(print url)
+	(multiple-value-bind (ret stream)
+	    (call-api-put ("_matrix/client/r0/rooms/" room-id
+			    "/send/m.room.message/" (unique-txid))
+			  "application/json" json)
+	  (let ((parsed (yason:parse stream :object-as :alist)))
+	    ;; (print parsed)
+	    (case ret
+	      (200 (print "success"))
+	      (t
+	       (format t "~%Sending failed. ~%  HTTP return code: ~a~%  Error message: ~a~%  Error Code: ~a"
+		       ret (strsoc "error" parsed) (strsoc "errcode" parsed)))))))
+    (skip-message ()
+      (print "due to an invalid URI the message was aborted"))))
 
 ;; (defgeneric test/send-text-message (room message-text))
 
@@ -107,6 +113,9 @@
 	     (update-sync))
 	(t (print "failure of some sort")
 	 (print ret))))))
+
+;;; these generic functions dont work in this file as the event classes
+;;; havent been loaded yet
 
 ;; (defgeneric test/send-message (room message))
 
