@@ -170,33 +170,33 @@
 
 (defparameter *new-room-text* nil)
 
-(defun update-sync ()
-  (multiple-value-bind (stream return)
-      (drakma:http-request (make-api-call "_matrix/client/r0/sync?since=" *next-batch*)
-			   :want-stream t
-			   :method :get
-			   :additional-headers (authorization-header))
-    (let ((parsed-stream (yason:parse stream :object-as :alist)))
-      (destructuring-bind ((batch . next-batch)
-			   device-one-time-keys
-			   (groups g-leave g-invite g-join)
-			   (rooms (leave-desc &rest leave-rooms)
-				  (invite-desc &rest invite-rooms)
-				  (join-desc &rest join-rooms))
-			   presence
-			   device-list
-			   to-device
-			   x) 
-	  parsed-stream
-	(print next-batch)
-	(print join-rooms)
-	(loop for room-alist in join-rooms
-	   do (let ((room (get-room-from-id (car room-alist))))
-		(let ((new-room-timeline-events (cdddr (assoc "timeline" room-alist :test #'string-equal))))
-		  (print new-room-timeline-events))
-		(print room)))))
+;; (defun update-sync ()
+;;   (multiple-value-bind (stream return)
+;;       (drakma:http-request (make-api-call "_matrix/client/r0/sync?since=" *next-batch*)
+;; 			   :want-stream t
+;; 			   :method :get
+;; 			   :additional-headers (authorization-header))
+;;     (let ((parsed-stream (yason:parse stream :object-as :alist)))
+;;       (destructuring-bind ((batch . next-batch)
+;; 			   device-one-time-keys
+;; 			   (groups g-leave g-invite g-join)
+;; 			   (rooms (leave-desc &rest leave-rooms)
+;; 				  (invite-desc &rest invite-rooms)
+;; 				  (join-desc &rest join-rooms))
+;; 			   presence
+;; 			   device-list
+;; 			   to-device
+;; 			   x) 
+;; 	  parsed-stream
+;; 	(print next-batch)
+;; 	(print join-rooms)
+;; 	(loop for room-alist in join-rooms
+;; 	   do (let ((room (get-room-from-id (car room-alist))))
+;; 		(let ((new-room-timeline-events (cdddr (assoc "timeline" room-alist :test #'string-equal))))
+;; 		  (print new-room-timeline-events))
+;; 		(print room)))))
     
-    return))
+;;     return))
 
 (defun get-room-from-id (room-id)
   (loop for room in *rooms-test*
