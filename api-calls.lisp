@@ -74,8 +74,8 @@
   "This takes a room id, a path to a file, and optionally a message type. First 
 uploading the file, then sending a message to the room. All files are sent as a "
   (restart-case 
-      (let* ((filename (car (last (str:split "/" file))))
-	     (url (upload-file file))
+      (let* ((filename (car (last (str:split "/" (format nil "~a" file)))))
+	     (url (upload-file (format nil "~a" file)))
 	     (json  (make-json-from-alist
 		     (list (cons "msgtype" (or msgtype
 					       (file->message-type file)))
