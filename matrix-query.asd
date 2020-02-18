@@ -19,4 +19,5 @@
 	       (:file "session")
 	       (:file "communicate")
 	       (:file "room-sync")
-	       (:file "events")))
+	       (:file "events")
+	       (:file "file-upload-download")))
